@@ -1,0 +1,69 @@
+const express = require("express");
+const app = express();
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
+
+// Serve frontend HTML + CSS + JS
+app.get("/", (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>Codtech Chat App</title>
+      <link rel="stylesheet" href="style.css"
+      <style>
+        
+      </style>
+    </head>
+    <body>
+      <div class="chat-container">
+        <h2>Codtech Chat Room</h2>
+        <div id="messages"></div>
+        <input id="msgInput" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        const socket = io();
+        const msgInput = document.getElementById("msgInput");
+        const messages = document.getElementById("messages");
+
+        function sendMessage() {
+          const message = msgInput.value;
+          if (message.trim()) {
+            socket.emit("chat message", message);
+            msgInput.value = "";
+          }
+        }
+
+        socket.on("chat message", (msg) => {
+          const item = document.createElement("div");
+          item.textContent = msg;
+          messages.appendChild(item);
+          messages.scrollTop = messages.scrollHeight;
+        });
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// Handle chat socket events
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("chat message", (msg) => {
+    io.emit("chat message", msg); // Send message to all clients
+  });
+
+  socket.on("disconnect", () => {
+    console.log("A user disconnected");
+  });
+});
+
+// Start server
+http.listen(3000, () => {
+  console.log("✅ Chat App running at http://localhost:3000");
+});
